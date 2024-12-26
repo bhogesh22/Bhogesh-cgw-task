@@ -1,0 +1,65 @@
+<template>
+    <lightning-card title="Invoice Details">
+        <div style="padding: 20px;">
+            <!-- Displaying the URL Parameters -->
+            <template if:true={originRecord}>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-family: 'Arial', sans-serif;">
+                    <tr style="background-color: #4CAF50; color: white;">
+                        <th style="padding: 10px; text-align: left;">Field</th>
+                        <th style="padding: 10px; text-align: left;">Value</th>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd; background-color: #f2f2f2;">
+                        <td style="padding: 8px;">Origin Record</td>
+                        <td style="padding: 8px;">{originRecord}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px;">Account Number</td>
+                        <td style="padding: 8px;">{account}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd; background-color: #f2f2f2;">
+                        <td style="padding: 8px;">Invoice Date</td>
+                        <td style="padding: 8px;">{invoiceDate}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px;">Invoice Due Date</td>
+                        <td style="padding: 8px;">{invoiceDueDate}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd; background-color: #f2f2f2;">
+                        <td style="padding: 8px;">Child Relationship Name</td>
+                        <td style="padding: 8px;">{childRelationshipName}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px;">Line Item Description</td>
+                        <td style="padding: 8px;">{lineItemDescription}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd; background-color: #f2f2f2;">
+                        <td style="padding: 8px;">Line Item Quantity</td>
+                        <td style="padding: 8px;">{lineItemQuantity}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px;">Line Item Unit Price</td>
+                        <td style="padding: 8px;">{lineItemUnitPrice}</td>
+                    </tr>
+                </table>
+            </template>
+
+            <!-- Show JSON Button -->
+            <div style="padding: 10px;">
+            <lightning-button variant="success" label="Show JSON" onclick={generateJSON}></lightning-button>
+            
+            <!-- Display the JSON -->
+            <template if:true={jsonData}>
+                <pre style="margin-top: 20px; background-color: #f5f5f5; padding: 10px; font-size: 14px; white-space: pre-wrap;">{jsonData}</pre>
+            </template>
+
+            <!-- Proceed to Create Invoice Button -->
+            <lightning-button
+                variant="success"
+                label="Proceed to Create Invoice"
+                onclick={proceedToCreateInvoice}>
+            </lightning-button>
+            </div>
+
+        </div>
+    </lightning-card>
+</template>
