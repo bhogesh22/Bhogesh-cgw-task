@@ -1,0 +1,32 @@
+public with sharing class InvoiceController {
+    @AuraEnabled
+    public static Id createInvoiceAndLineItems(Map<String, Object> invoiceDetails) {
+        try {
+            // Create the Invoice
+            Invoice newInvoice = new Invoice();
+            newInvoice.BillingAccountId = (String) invoiceDetails.get('accountId');
+            newInvoice.InvoiceDate = Date.valueOf((String) invoiceDetails.get('invoiceDate'));
+            newInvoice.DueDate = Date.valueOf((String) invoiceDetails.get('dueDate'));
+            insert newInvoice;
+
+            // Create the Line Items
+            List<InvoiceLine> lineItems = new List<InvoiceLine>();
+            List<Map<String, Object>> lineItemDetails = (List<Map<String, Object>>) invoiceDetails.get('lineItems');
+
+            for (Map<String, Object> item : lineItemDetails) {
+                InvoiceLine lineItem = new InvoiceLine();
+                lineItem.Invoiceid = newInvoice.Id;
+                lineItem.Description = (String) item.get('description');
+                lineItem.Quantity = Decimal.valueOf((String) item.get('quantity'));
+                lineItem.UnitPrice = Decimal.valueOf((String) item.get('unitPrice'));
+                lineItems.add(lineItem);
+            }
+
+            insert lineItems;
+
+            return newInvoice.Id;
+        } catch (Exception e) {
+            throw new AuraHandledException('Error creating Invoice and Line Items: ' + e.getMessage());
+        }
+    }
+}
