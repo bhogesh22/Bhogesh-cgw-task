@@ -1,0 +1,113 @@
+public with sharing class DynamicInvoiceController {
+    @AuraEnabled(cacheable=true)
+    public static OrderWrapper getOrderWithDynamicFields(
+        Id orderId,
+        String accountField,
+        String invoiceDateField,
+        String invoiceDueDateField,
+        String childRelationshipName,
+        String descriptionField,
+        String quantityField,
+        String unitPriceField
+    ) {
+        try {
+            // Validate required parameters
+            if (orderId == null) {
+                throw new AuraHandledException('Order ID is required');
+            }
+
+            // Set default values if parameters are null
+            accountField = String.isBlank(accountField) ? 'AccountId' : accountField;
+            invoiceDateField = String.isBlank(invoiceDateField) ? 'CreatedDate' : invoiceDateField;
+            invoiceDueDateField = String.isBlank(invoiceDueDateField) ? 'EffectiveDate' : invoiceDueDateField;
+            childRelationshipName = String.isBlank(childRelationshipName) ? 'OrderItems' : childRelationshipName;
+            descriptionField = String.isBlank(descriptionField) ? 'Description' : descriptionField;
+            quantityField = String.isBlank(quantityField) ? 'Quantity' : quantityField;
+            unitPriceField = String.isBlank(unitPriceField) ? 'UnitPrice' : unitPriceField;
+
+            // Build dynamic SOQL for Order
+            String orderQuery = 'SELECT Id, ' + String.escapeSingleQuotes(accountField) + 
+                              ', ' + String.escapeSingleQuotes(invoiceDateField) + 
+                              ', ' + String.escapeSingleQuotes(invoiceDueDateField) + 
+                              ', (SELECT Id, ' + 
+                              String.escapeSingleQuotes(descriptionField) + ', ' +
+                              String.escapeSingleQuotes(quantityField) + ', ' +
+                              String.escapeSingleQuotes(unitPriceField) +
+                              ' FROM ' + String.escapeSingleQuotes(childRelationshipName) + 
+                              ') FROM Order WHERE Id = :orderId';
+
+            System.debug('Query: ' + orderQuery);
+            
+            // Execute query
+            Order ord = Database.query(orderQuery);
+            
+            if (ord == null) {
+                throw new AuraHandledException('Order not found');
+            }
+            
+            // Create wrapper
+            OrderWrapper wrapper = new OrderWrapper();
+            wrapper.accountName = String.valueOf(getFieldValue(ord, accountField));
+            wrapper.invoiceDate = (DateTime)getFieldValue(ord, invoiceDateField);
+            wrapper.invoiceDueDate = (Date)getFieldValue(ord, invoiceDueDateField);
+            
+            // Process line items
+            List<LineItemWrapper> lineItems = new List<LineItemWrapper>();
+            List<SObject> orderItems = ord.getSObjects(childRelationshipName);
+            
+            if (orderItems != null) {
+                for (SObject item : orderItems) {
+                    LineItemWrapper lineItem = new LineItemWrapper();
+                    lineItem.Id = item.Id;
+                    lineItem.description = String.valueOf(getFieldValue(item, descriptionField));
+                    lineItem.quantity = (Decimal)getFieldValue(item, quantityField);
+                    lineItem.unitPrice = (Decimal)getFieldValue(item, unitPriceField);
+                    lineItems.add(lineItem);
+                }
+            }
+            
+            wrapper.lineItems = lineItems;
+            return wrapper;
+            
+        } catch (Exception e) {
+            System.debug('Error in getOrderWithDynamicFields: ' + e.getMessage());
+            System.debug('Stack trace: ' + e.getStackTraceString());
+            throw new AuraHandledException('Error processing order details: ' + e.getMessage());
+        }
+    }
+    
+    private static Object getFieldValue(SObject record, String fieldName) {
+        if (record == null || String.isBlank(fieldName)) {
+            return null;
+        }
+        
+        try {
+            List<String> fieldParts = fieldName.split('\\.');
+            SObject currentRecord = record;
+            
+            for (Integer i = 0; i < fieldParts.size() - 1; i++) {
+                currentRecord = currentRecord.getSObject(fieldParts[i]);
+                if (currentRecord == null) return null;
+            }
+            
+            return currentRecord.get(fieldParts[fieldParts.size() - 1]);
+        } catch (Exception e) {
+            System.debug('Error getting field value: ' + e.getMessage());
+            return null;
+        }
+    }
+    
+    public class OrderWrapper {
+        @AuraEnabled public String accountName;
+        @AuraEnabled public DateTime invoiceDate;
+        @AuraEnabled public Date invoiceDueDate;
+        @AuraEnabled public List<LineItemWrapper> lineItems;
+    }
+    
+    public class LineItemWrapper {
+        @AuraEnabled public Id Id;
+        @AuraEnabled public String description;
+        @AuraEnabled public Decimal quantity;
+        @AuraEnabled public Decimal unitPrice;
+    }
+}
