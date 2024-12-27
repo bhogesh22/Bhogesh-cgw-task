@@ -1,65 +1,77 @@
+<!-- displayURLParams.html -->
 <template>
-    <lightning-card title="Invoice Details">
-        <div style="padding: 20px;">
-            <!-- Displaying the URL Parameters -->
-            <template if:true={originRecord}>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-family: 'Arial', sans-serif;">
-                    <tr style="background-color: #4CAF50; color: white;">
-                        <th style="padding: 10px; text-align: left;">Field</th>
-                        <th style="padding: 10px; text-align: left;">Value</th>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd; background-color: #f2f2f2;">
-                        <td style="padding: 8px;">Origin Record</td>
-                        <td style="padding: 8px;">{originRecord}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">Account Number</td>
-                        <td style="padding: 8px;">{account}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd; background-color: #f2f2f2;">
-                        <td style="padding: 8px;">Invoice Date</td>
-                        <td style="padding: 8px;">{invoiceDate}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">Invoice Due Date</td>
-                        <td style="padding: 8px;">{invoiceDueDate}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd; background-color: #f2f2f2;">
-                        <td style="padding: 8px;">Child Relationship Name</td>
-                        <td style="padding: 8px;">{childRelationshipName}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">Line Item Description</td>
-                        <td style="padding: 8px;">{lineItemDescription}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd; background-color: #f2f2f2;">
-                        <td style="padding: 8px;">Line Item Quantity</td>
-                        <td style="padding: 8px;">{lineItemQuantity}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">Line Item Unit Price</td>
-                        <td style="padding: 8px;">{lineItemUnitPrice}</td>
-                    </tr>
-                </table>
+    <lightning-card title="Generate Invoice" icon-name="standard:invoice">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" variant="brand"></lightning-spinner>
             </template>
-
-            <!-- Show JSON Button -->
-            <div style="padding: 10px;">
-            <lightning-button variant="success" label="Show JSON" onclick={generateJSON}></lightning-button>
             
-            <!-- Display the JSON -->
-            <template if:true={jsonData}>
-                <pre style="margin-top: 20px; background-color: #f5f5f5; padding: 10px; font-size: 14px; white-space: pre-wrap;">{jsonData}</pre>
+            <template if:true={error}>
+                <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+                    <span class="slds-assistive-text">error</span>
+                    <h2>{error}</h2>
+                </div>
             </template>
+            
+            <template if:true={invoiceData}>
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                        <p class="slds-p-bottom_small">
+                            <strong>Account: </strong>
+                            <span>{invoiceData.accountName}</span>
+                        </p>
+                        <p class="slds-p-bottom_small">
+                            <strong>Invoice Date: </strong>
+                            <span>{formattedInvoiceDate}</span>
+                        </p>
+                        <p class="slds-p-bottom_small">
+                            <strong>Due Date: </strong>
+                            <span>{formattedDueDate}</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="slds-m-top_medium">
+                    <h2 class="slds-text-heading_small slds-m-bottom_small">Line Items</h2>
+                    <template if:true={invoiceData.lineItems}>
+                        <lightning-datatable
+                            key-field="id"
+                            data={invoiceData.lineItems}
+                            columns={columns}
+                            hide-checkbox-column>
+                        </lightning-datatable>
+                    </template>
+                </div>
 
-            <!-- Proceed to Create Invoice Button -->
-            <lightning-button
-                variant="success"
-                label="Proceed to Create Invoice"
-                onclick={proceedToCreateInvoice}>
-            </lightning-button>
-            </div>
+                <!-- Action Buttons -->
+                <div class="slds-m-top_medium slds-grid slds-grid_align-center slds-gutters">
+                    <div class="slds-col">
+                        <lightning-button 
+                            variant="brand"
+                            label="Show JSON" 
+                            onclick={generateJSON}
+                            class="slds-m-right_x-small">
+                        </lightning-button>
+                    </div>
+                    <div class="slds-col">
+                        <lightning-button 
+                            variant="success"
+                            label="Proceed to Create Invoice" 
+                            onclick={proceedToCreateInvoice}
+                            class="slds-m-left_x-small">
+                        </lightning-button>
+                    </div>
+                </div>
 
+                <!-- JSON Display Area -->
+                <template if:true={jsonData}>
+                    <div class="slds-m-top_medium">
+                        <div class="slds-box slds-theme_shade">
+                            <pre class="slds-text-body_small">{jsonData}</pre>
+                        </div>
+                    </div>
+                </template>
+            </template>
         </div>
     </lightning-card>
 </template>
